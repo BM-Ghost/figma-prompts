@@ -1,0 +1,13 @@
+{
+  "name": "figma-prompts",
+  "owner": {
+    "name": "Meshack Bwire"
+  },
+  "plugins": [
+    {
+      "name": "figma-components",
+      "source": ".",
+      "description": "Figma component link to SwiftUI and Jetpack Compose, with a shared theme file kept consistent across components."
+    }
+  ]
+}
