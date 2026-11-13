@@ -1,76 +1,53 @@
-# figma-prompts
+# figma-to-native
 
-A Claude Code plugin, skill and agent that turn a Figma component link into drop-in SwiftUI and Jetpack Compose files, while keeping one shared theme file per platform consistent across every component.
+Turn a Figma component into production-ready **SwiftUI (iOS)** and **Jetpack Compose (Android)** code. Send a link, get a documented, accessible, previewable component, and keep one shared theme file per platform consistent across every component you build.
 
-## Repository layout
-
-```
-.claude-plugin/
-├── plugin.json              Plugin manifest (name: figma-components)
-└── marketplace.json         Lets this repo act as a plugin marketplace
-skills/
-└── figma-component-generator/
-    └── SKILL.md             All the rules. Single source of truth.
-agents/
-└── component-generator.md   Thin agent that loads the skill
-scripts/
-└── build-chat-skill.sh      Rebuilds the chat upload zip
-dist/
-└── figma-component-generator.zip   Skill package for Claude chat
-```
-
-The skill holds every rule. The agent only loads the skill, so the two never drift apart.
-
-## Install
-
-### Claude Code, as a plugin (recommended for the team)
-
-```
-/plugin marketplace add BM-Ghost/figma-prompts
-/plugin install figma-components@figma-prompts
-```
-
-Run `/plugin` to browse and install from a menu if you prefer. Once installed, the skill and agent are available in every project. When installed as a plugin, they appear with the `figma-components:` prefix.
-
-### Claude Code, copied into one project
-
-Copy the two folders into the project's `.claude` directory and commit them:
-
-```
-mkdir -p .claude/skills .claude/agents
-cp -r skills/figma-component-generator .claude/skills/
-cp agents/component-generator.md .claude/agents/
-```
-
-### Claude chat (claude.ai or the Claude app)
-
-Upload `dist/figma-component-generator.zip` as a custom skill in your Claude settings (Settings, then Capabilities, then Skills; menu names may differ by plan and app version). Skills may be unavailable on some plans.
-
-In chat there is no project folder, so attach your current `Theme.swift` and `Theme.kt` to the conversation whenever they already exist. The skill returns an updated theme file whenever it adds roles. Save that file and attach it next time.
-
-## Use
-
-Send a Figma component link:
-
-```
-Use component-generator on <Figma link>
-```
-
-Optional extras in the same message: `ios only`, `android only`, or an output folder. In chat, mention the skill by name ("use figma-component-generator") if it does not trigger on its own.
+It ships as a Claude Code plugin (skill plus agent) and as a skill you can upload to Claude chat.
 
 ## What you get
 
 For each component and platform:
 
-- one component file named after its primary type
-- the shared theme file, created with the first component and extended afterwards
+- one component file named after its primary type, with variants, states, previews, Dark mode, RTL and large-text support
+- a shared theme file (`Theme.swift`, `Theme.kt`), created with the first component and extended afterwards, so colours, spacing and type never drift between components
+- a short report with a usage example, assumptions, and anything in the design that is not tied to a design-system variable
 
-Default locations in a project that has no theme yet:
+## Install
+
+### Claude Code, as a plugin (recommended)
 
 ```
-DesignSystem/iOS/Theme.swift
-DesignSystem/Android/Theme.kt
+/plugin marketplace add BM-Ghost/figma-prompts
+/plugin install figma-to-native@figma-prompts
 ```
+
+You can also run `/plugin` and install from the menu. When installed as a plugin, the skill appears as `figma-to-native:figma-to-native`.
+
+### Claude Code, copied into one project
+
+```
+mkdir -p .claude/skills .claude/agents
+cp -r skills/figma-to-native .claude/skills/
+cp agents/figma-to-native.md .claude/agents/
+```
+
+### Claude chat (claude.ai or the Claude app)
+
+Upload `dist/figma-to-native.zip` as a custom skill in your Claude settings. Menu names and plan availability vary, so check your account's skills settings.
+
+Chat has no project folder, so attach your current `Theme.swift` and `Theme.kt` to the conversation whenever they exist. The skill returns an updated theme file whenever it adds roles. Save it and attach it next time.
+
+## Use
+
+Open your app project in Claude Code, make sure a Figma tool is connected (`/mcp`), and send a component link:
+
+```
+Use the figma-to-native agent on <Figma link>
+```
+
+Optional extras: `ios only`, `android only`, or an output folder. In chat, mention the skill by name if it does not trigger on its own.
+
+Commit the generated theme files. Every later run reads them first. If they are missing, the skill stops and asks for them instead of inventing new ones.
 
 ## How the theme stays consistent
 
@@ -83,11 +60,25 @@ DesignSystem/Android/Theme.kt
 ## Requirements
 
 - Access to the Figma file. Reading variables per mode needs a Figma tool that can run plugin code. Without one, the skill asks for screenshots or specs.
+- iOS output targets iOS 15.8.7 and later. Android output targets minSdk 24. Both are set in `SKILL.md`.
 - For Android, add your package name to the Android section of `SKILL.md`, for example: `Use package com.yourcompany.designsystem`.
+
+## Repository layout
+
+```
+.claude-plugin/
+├── plugin.json              Plugin manifest (name: figma-to-native)
+└── marketplace.json         Lets this repo act as a plugin marketplace
+skills/figma-to-native/
+└── SKILL.md                 All the rules. Single source of truth.
+agents/figma-to-native.md    Thin agent that loads the skill
+scripts/build-chat-skill.sh  Rebuilds the chat upload zip
+dist/figma-to-native.zip     Skill package for Claude chat
+```
 
 ## Changing the rules
 
-1. Edit `skills/figma-component-generator/SKILL.md`.
+1. Edit `skills/figma-to-native/SKILL.md`.
 2. Run `scripts/build-chat-skill.sh` to refresh the chat zip.
 3. Commit both, and bump `version` in `.claude-plugin/plugin.json` so plugin users receive the update.
 
@@ -97,4 +88,4 @@ Keep the agent file thin. Do not copy rules into it.
 
 - Don't run two instances at once on different components. Both would edit the same theme files.
 - A compile check runs only when `swiftc` or `gradle` and a project are available. Otherwise the skill relies on its own review.
-- The repository is public. Anyone can read these rules.
+- Output quality depends on how well the Figma file uses variables for colour, spacing and type.
