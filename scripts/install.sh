@@ -1,30 +1,40 @@
 #!/usr/bin/env bash
 # Installs the figma-to-native skill so your AI tools can use it.
 #
-# Usage:
-#   scripts/install.sh [target] [--global] [--dir <project-dir>]
+# One command, no clone needed:
+#   curl -fsSL https://raw.githubusercontent.com/BM-Ghost/figma-prompts/main/scripts/install.sh | bash -s -- --global
 #
-# Targets (default: all):
-#   claude        Claude Code
-#   agents        Codex CLI, Cursor, Devin, and other tools that follow the open Agent Skills layout
-#   antigravity   Google Antigravity
-#   all           every target above
-#
-# Scope:
-#   (default)         install into a project: the current directory, or --dir <path>
-#   --global          install into your home folder, so every project on this computer can use it
-#
-# Where files go:
-#   claude        project: .claude/skills            global: ~/.claude/skills
-#   agents        project: .agents/skills            global: ~/.agents/skills
-#   antigravity   project: .agents/skills            global: ~/.gemini/config/skills
-#
-# Works on macOS, Linux, WSL and Git Bash. On plain Windows, copy skills/figma-to-native
-# into the folders listed above by hand.
+# It also runs from a clone of the repo: scripts/install.sh --global
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/skills/figma-to-native"
+REPO="BM-Ghost/figma-prompts"
+REF="${FIGMA_TO_NATIVE_REF:-main}"
+
+usage() {
+  cat <<'USAGE'
+Usage: install.sh [target] [--global] [--dir <project-dir>]
+
+Targets (default: all):
+  claude        Claude Code
+  agents        Codex CLI, Cursor, Devin and other tools that follow the open Agent Skills layout
+  antigravity   Google Antigravity
+  all           every target above
+
+Scope:
+  --global          install into your home folder, so every project on this computer can use it
+  (default)         install into a project: the current directory, or --dir <path>
+
+Where files go:
+  claude        global: ~/.claude/skills       project: .claude/skills
+  agents        global: ~/.agents/skills       project: .agents/skills
+  antigravity   global: ~/.gemini/config/skills  project: .agents/skills
+
+Environment:
+  FIGMA_TO_NATIVE_REF   branch or tag to download when not run from a clone (default: main)
+
+Works on macOS, Linux, WSL and Git Bash. Needs curl and tar when run without a clone.
+USAGE
+}
 
 TARGET="all"
 SCOPE="project"
@@ -34,13 +44,32 @@ while [ $# -gt 0 ]; do
     claude|agents|antigravity|all) TARGET="$1" ;;
     --global) SCOPE="global" ;;
     --dir) shift; PROJECT_DIR="${1:?--dir needs a path}" ;;
-    -h|--help) sed -n '2,23p' "${BASH_SOURCE[0]}"; exit 0 ;;
-    *) echo "Unknown argument: $1" >&2; exit 1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 1 ;;
   esac
   shift
 done
 
-[ -f "$SRC/SKILL.md" ] || { echo "Skill not found at $SRC" >&2; exit 1; }
+SELF="${BASH_SOURCE[0]:-}"
+SRC=""
+if [ -n "$SELF" ] && [ -f "$SELF" ]; then
+  LOCAL_SRC="$(cd "$(dirname "$SELF")/.." && pwd)/skills/figma-to-native"
+  [ -f "$LOCAL_SRC/SKILL.md" ] && SRC="$LOCAL_SRC"
+fi
+
+TMP=""
+cleanup() { [ -n "$TMP" ] && rm -rf "$TMP"; return 0; }
+trap cleanup EXIT
+
+if [ -z "$SRC" ]; then
+  command -v curl >/dev/null 2>&1 || { echo "curl is required to download the skill." >&2; exit 1; }
+  command -v tar >/dev/null 2>&1 || { echo "tar is required to unpack the skill." >&2; exit 1; }
+  TMP="$(mktemp -d)"
+  echo "Downloading figma-to-native ($REF) from github.com/$REPO ..."
+  curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$REF" | tar -xz -C "$TMP"
+  SRC="$(echo "$TMP"/*/skills/figma-to-native)"
+  [ -f "$SRC/SKILL.md" ] || { echo "Download did not contain the skill." >&2; exit 1; }
+fi
 
 if [ "$SCOPE" = "global" ]; then BASE="$HOME"; else BASE="$PROJECT_DIR"; fi
 
@@ -74,4 +103,4 @@ else
   install_target "$TARGET"
 fi
 
-echo "Done. Restart your AI tool if it was already open."
+echo "Done. Restart your AI tool if it was already open, then send a Figma link and say: use figma-to-native."
