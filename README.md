@@ -9,8 +9,8 @@ Built for Claude first. Works in other AI tools too.
 | Where you work | What to do |
 | --- | --- |
 | **Claude chat** (claude.ai, Claude app) | Upload `dist/figma-to-native.zip` once, then paste a Figma link. [Steps](#claude-chat) |
-| **Claude Code** | Run two `/plugin` commands once, then send a link. [Steps](#claude-code) |
-| **Devin, Codex CLI, Cursor and other agents** | Run `scripts/install.sh agents`, then send a link. [Steps](#other-ai-agents) |
+| **Claude Code** | Run `/plugin marketplace add BM-Ghost/figma-prompts`, then `/plugin install figma-to-native@figma-prompts`. [Steps](#claude-code) |
+| **Devin, Codex CLI, Cursor, Antigravity** (install once on your laptop, use in every project) | Run `scripts/install.sh --global`. [Steps](#install-once-on-your-laptop-claude-code-devin-codex-cursor-antigravity) |
 | **Any other AI chat** | Paste `dist/figma-to-native.prompt.md`, then send a link. [Steps](#any-other-ai-chat) |
 
 ## What you get
@@ -46,19 +46,35 @@ Use the figma-to-native agent on <Figma link>
 
 Optional extras: `ios only`, `android only`, or an output folder. Commit the generated theme files. Every later run reads them first.
 
-To use it without the plugin, run `scripts/install.sh claude` from your project, or add `--global` to install for every project.
+To use it without the plugin, run `scripts/install.sh claude --global` to install for every project on your computer.
 
-## Other AI agents
+## Install once on your laptop (Claude Code, Devin, Codex, Cursor, Antigravity)
 
-Devin, Codex CLI, Cursor and other tools read skills in the open Agent Skills format. Install into your project:
+These tools read skills in the open Agent Skills format. Install the skill once into your home folder and every project on your computer can use it:
 
 ```
-scripts/install.sh agents --dir /path/to/your/app
+git clone https://github.com/BM-Ghost/figma-prompts
+cd figma-prompts
+scripts/install.sh --global
 ```
 
-This copies the skill to `.agents/skills/figma-to-native`, a folder Devin and Codex both read. Use `--global` to install into your home folder instead. Then send a link and name the skill, for example "use figma-to-native on <link>", or `@skills:figma-to-native <link>` in Devin.
+That installs to the folders each tool reads from, and restart any tool that was open:
+
+| Tool | Global folder | Project folder |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills/figma-to-native` | `.claude/skills/figma-to-native` |
+| Codex CLI, Cursor, Devin | `~/.agents/skills/figma-to-native` | `.agents/skills/figma-to-native` |
+| Antigravity | `~/.gemini/config/skills/figma-to-native` | `.agents/skills/figma-to-native` |
+
+To install for one tool only, add its name, for example `scripts/install.sh antigravity --global`. To install into a single project instead, leave out `--global` and add `--dir /path/to/your/app`. Commit that folder if you want your whole team to get it.
+
+Then send a link and name the skill, for example "use figma-to-native on <link>", or `@skills:figma-to-native <link>` in Devin.
+
+The script runs on macOS, Linux, WSL and Git Bash. On plain Windows, copy `skills/figma-to-native` into the folders above by hand. Devin on Windows also reads `%APPDATA%\devin\skills`.
 
 Each tool has its own way of reading Figma. The skill adapts to the tools it finds and says so in its report when it could not verify a value.
+
+Folder locations come from each tool's own documentation ([Devin](https://docs.devin.ai/cli/extensibility/skills/overview), [Cursor](https://cursor.com/docs/skills), [Antigravity](https://antigravity.google/docs/skills)) and may change.
 
 ## Any other AI chat
 
@@ -89,7 +105,7 @@ skills/figma-to-native/
 agents/figma-to-native.md    Claude Code agent that loads the skill
 scripts/
 ├── build.sh                 Builds the chat zip and the paste-ready prompt
-└── install.sh               Installs the skill for Claude Code or other agents
+└── install.sh               Installs the skill for Claude Code, Codex, Cursor, Devin or Antigravity
 dist/
 ├── figma-to-native.zip          Claude chat upload
 └── figma-to-native.prompt.md    Paste-ready prompt for any AI chat
@@ -108,4 +124,4 @@ Keep the agent file thin. Do not copy rules into it.
 - Don't run two instances at once on different components. Both would edit the same theme files.
 - A compile check runs only when `swiftc` or `gradle` and a project are available. Otherwise the skill relies on its own review.
 - Output quality depends on how well the Figma file uses variables for colour, spacing and type.
-- Only the Claude routes have been designed against Claude's own tools. Other agents are supported through the open skill format and may behave differently.
+- Only the Claude routes have been designed against Claude's own tools. Devin, Codex, Cursor and Antigravity are supported through the open skill format and have not been tested yet, so behaviour may differ.
