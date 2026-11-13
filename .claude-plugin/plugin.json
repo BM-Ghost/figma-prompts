@@ -1,7 +1,7 @@
 {
   "name": "figma-to-native",
   "description": "Turns a Figma component link into production-ready SwiftUI (iOS) and Jetpack Compose (Android) code, and keeps one shared theme file per platform consistent.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": {
     "name": "Meshack Bwire"
   },
