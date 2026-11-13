@@ -5,9 +5,9 @@
   },
   "plugins": [
     {
-      "name": "figma-components",
+      "name": "figma-to-native",
       "source": ".",
-      "description": "Figma component link to SwiftUI and Jetpack Compose, with a shared theme file kept consistent across components."
+      "description": "Figma component link to production-ready SwiftUI and Jetpack Compose, with a shared theme file kept consistent across components."
     }
   ]
 }

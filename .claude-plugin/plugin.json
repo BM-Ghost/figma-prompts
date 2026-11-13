@@ -1,10 +1,10 @@
 {
-  "name": "figma-components",
-  "description": "Turns a Figma component link into drop-in SwiftUI and Jetpack Compose files and keeps one shared theme file per platform consistent.",
-  "version": "1.0.0",
+  "name": "figma-to-native",
+  "description": "Turns a Figma component link into production-ready SwiftUI (iOS) and Jetpack Compose (Android) code, and keeps one shared theme file per platform consistent.",
+  "version": "1.1.0",
   "author": {
     "name": "Meshack Bwire"
   },
   "repository": "https://github.com/BM-Ghost/figma-prompts",
-  "keywords": ["figma", "swiftui", "jetpack-compose", "design-system", "ios", "android"]
+  "keywords": ["figma", "design-to-code", "swiftui", "jetpack-compose", "design-system", "ios", "android"]
 }
