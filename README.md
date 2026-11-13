@@ -10,7 +10,7 @@ Built for Claude first. Works in other AI tools too.
 | --- | --- |
 | **Claude chat** (claude.ai, Claude app) | Upload `dist/figma-to-native.zip` once, then paste a Figma link. [Steps](#claude-chat) |
 | **Claude Code** | Run `/plugin marketplace add BM-Ghost/figma-prompts`, then `/plugin install figma-to-native@figma-prompts`. [Steps](#claude-code) |
-| **Devin, Codex CLI, Cursor, Antigravity** (install once on your laptop, use in every project) | Run `scripts/install.sh --global`. [Steps](#install-once-on-your-laptop-claude-code-devin-codex-cursor-antigravity) |
+| **Devin, Codex CLI, Cursor, Antigravity** (install once on your laptop, use in every project) | Paste one command in your terminal. [Steps](#install-once-on-your-laptop-claude-code-devin-codex-cursor-antigravity) |
 | **Any other AI chat** | Paste `dist/figma-to-native.prompt.md`, then send a link. [Steps](#any-other-ai-chat) |
 
 ## What you get
@@ -46,19 +46,21 @@ Use the figma-to-native agent on <Figma link>
 
 Optional extras: `ios only`, `android only`, or an output folder. Commit the generated theme files. Every later run reads them first.
 
-To use it without the plugin, run `scripts/install.sh claude --global` to install for every project on your computer.
+To use it without the plugin, install it for every project on your computer with:
+
+```
+curl -fsSL https://raw.githubusercontent.com/BM-Ghost/figma-prompts/main/scripts/install.sh | bash -s -- claude --global
+```
 
 ## Install once on your laptop (Claude Code, Devin, Codex, Cursor, Antigravity)
 
-These tools read skills in the open Agent Skills format. Install the skill once into your home folder and every project on your computer can use it:
+These tools read skills in the open Agent Skills format. Paste this one command in your terminal and every project on your computer can use the skill. No clone needed:
 
 ```
-git clone https://github.com/BM-Ghost/figma-prompts
-cd figma-prompts
-scripts/install.sh --global
+curl -fsSL https://raw.githubusercontent.com/BM-Ghost/figma-prompts/main/scripts/install.sh | bash -s -- --global
 ```
 
-That installs to the folders each tool reads from, and restart any tool that was open:
+It downloads the skill and copies it to the folder each tool reads from. Restart any tool that was open. You can read the [script](scripts/install.sh) first if you like.
 
 | Tool | Global folder | Project folder |
 | --- | --- | --- |
@@ -66,11 +68,11 @@ That installs to the folders each tool reads from, and restart any tool that was
 | Codex CLI, Cursor, Devin | `~/.agents/skills/figma-to-native` | `.agents/skills/figma-to-native` |
 | Antigravity | `~/.gemini/config/skills/figma-to-native` | `.agents/skills/figma-to-native` |
 
-To install for one tool only, add its name, for example `scripts/install.sh antigravity --global`. To install into a single project instead, leave out `--global` and add `--dir /path/to/your/app`. Commit that folder if you want your whole team to get it.
+To install for one tool only, put its name before `--global`, for example `... | bash -s -- antigravity --global`. To install into a single project instead, leave out `--global` and run the command from the project folder, or add `--dir /path/to/your/app`. Commit that folder if you want your whole team to get it. If you already cloned the repo, `scripts/install.sh --global` does the same thing.
 
 Then send a link and name the skill, for example "use figma-to-native on <link>", or `@skills:figma-to-native <link>` in Devin.
 
-The script runs on macOS, Linux, WSL and Git Bash. On plain Windows, copy `skills/figma-to-native` into the folders above by hand. Devin on Windows also reads `%APPDATA%\devin\skills`.
+The command needs `curl` and `tar` and runs on macOS, Linux, WSL and Git Bash. On plain Windows, download the repo and copy `skills/figma-to-native` into the folders above by hand. Devin on Windows also reads `%APPDATA%\devin\skills`.
 
 Each tool has its own way of reading Figma. The skill adapts to the tools it finds and says so in its report when it could not verify a value.
 
