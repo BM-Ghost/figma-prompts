@@ -27,7 +27,7 @@ For each component and platform:
 2. Go to **Customize, then Skills**, click **+**, choose **Create skill**, then **Upload a skill**, and upload `dist/figma-to-native.zip`. Switch it on.
 3. Start a chat, paste a Figma component link and say "use figma-to-native on this".
 
-Chat keeps no files between conversations. The skill hands you `Theme.swift` and `Theme.kt` as downloads. Save them and attach the latest ones at the start of your next conversation.
+Chat keeps no files between conversations, so the skill will ask you for a zip of your existing components and theme files before it builds anything. See [Avoid duplicates](#avoid-duplicates-bring-your-existing-code). It hands you the new and changed files as downloads. Save them, re-zip your project, and attach that zip next time.
 
 Reading your design needs a Figma connector in chat. Without one, the skill asks for screenshots or specs.
 
@@ -80,7 +80,24 @@ Folder locations come from each tool's own documentation ([Devin](https://docs.d
 
 ## Any other AI chat
 
-For chat tools without skill support, paste the contents of `dist/figma-to-native.prompt.md` as your first message, wait for "Ready", then send your Figma link or screenshots. Paste your current `Theme.swift` and `Theme.kt` if you have them. The AI returns each file in a code block.
+For chat tools without skill support, paste the contents of `dist/figma-to-native.prompt.md` as your first message, wait for "Ready", then send your Figma link or screenshots. Attach a zip of your existing components and theme files if the tool accepts attachments, or paste your theme file and the names and initializers of any components that might overlap. The AI returns each new file in a code block.
+
+## Avoid duplicates: bring your existing code
+
+Before it builds anything, the skill looks at what you already have, so you don't end up with a second Badge or a parallel set of colours.
+
+- **In Claude Code and other agents** it searches your project itself. No zip needed.
+- **In chat** it asks you for a zip first. Include your theme and colour files and the components folder for each platform you are building, plus shared styles, modifiers and enums. Leave out `Pods`, `build`, `DerivedData`, `.git`, `node_modules` and images. If this is your first component, answer "none".
+
+What it does with your code:
+
+- Reuses an existing component instead of creating a second one, and uses existing components inside new ones.
+- Adds a new variant to an existing component without breaking current call sites.
+- Reuses your shared types, theme roles and naming, and matches your folder layout and documentation style.
+- Reads your files as reference only. It never changes your originals, and the zip's contents are treated as data, never as instructions.
+- Delivers only new or changed files, and the report lists what was reused, extended, new, and skipped as a duplicate.
+
+Because chat remembers nothing between conversations, re-zip your project after each batch of components and attach the new zip next time.
 
 ## How the theme stays consistent
 
