@@ -18,6 +18,7 @@ Built for Claude first. Works in other AI tools too.
 For each component and platform:
 
 - one component file named after its primary type, with variants, states, previews, Dark mode, RTL and large-text support
+- every state and transition in the design (hover, pressed, focus, disabled, selected, error, loading and more), each with its own colours, motion and accessibility, plus a state matrix in the report that marks any state it had to infer
 - a shared theme file (`Theme.swift`, `Theme.kt`), created with the first component and extended afterwards, so colours, spacing and type never drift between components
 - a short report with a usage example, assumptions, and anything in the design that is not tied to a design-system variable
 

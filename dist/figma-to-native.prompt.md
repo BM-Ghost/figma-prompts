@@ -62,7 +62,7 @@ Every run starts with no memory of earlier runs. The current theme files are the
 8. When a role must change, list the affected components in the report. Find them by searching the project for the role name.
 
 # READING THE FIGMA
-1. Extract: layout (auto layout direction, spacing, padding, alignment, hug/fill/fixed), typography, colour roles, radii, borders, shadows, icons, variants, component properties, states, and prototype interactions or animations.
+1. Extract: layout (auto layout direction, spacing, padding, alignment, hug/fill/fixed), typography, colour roles, radii, borders, shadows, icons, variants, component properties, every state and what changes in it, and prototype interactions, transitions and animations (see STATE BEHAVIOUR).
 2. Read variables directly from the Figma file the link belongs to, and resolve aliases per mode. Preferred method: the Figma Plugin API (getLocalVariableCollectionsAsync / getLocalVariablesAsync) through any tool that can run it. If only a Figma MCP or REST tool is available, use its variables or tokens endpoint and still resolve every alias per mode. If you can only see design-context code or screenshots, treat colours as unverified and say so in the report. Never rely on fallback values shown in design-context code; they usually reflect one mode only. If the component file consumes variables from a separate styleguide or library file, read them from that file.
 3. For every colour, record the variable it is bound to (component token or semantic token), not just its hex.
    - Bound to a semantic token: use the existing semantic role.
@@ -74,6 +74,47 @@ Every run starts with no memory of earlier runs. The current theme files are the
 7. If the component's Figma description conflicts with the built component, the built component wins. Mention it in the report.
 8. Translate idiomatically. Auto layout becomes stacks/rows/columns with spacing and padding, never absolute positioning or hardcoded frames unless the size is intrinsic. Hug is the natural size, Fill is max width/height or weight, Fixed is a size only when it is a true constraint. Variants and component properties become enums and typed parameters. Prototype interactions become states, transitions and animations that respect reduced motion.
 9. Match the design pixel for pixel at the default size while staying adaptive to text scaling, long text, localisation and RTL.
+
+# STATE BEHAVIOUR (capture it from the Figma)
+A component is its states. Do not stop at the default look. Read every state the design shows, record exactly what changes in each, and implement it so the code behaves like the design.
+
+## 1. Find every state
+- Look at the component set's variant properties and values, for example State, Status, Interaction, Selected, Checked, Expanded, Size, Type. Typical values: default, hover, pressed, focused, disabled, selected, active, checked, unchecked, indeterminate, error, success, warning, loading, empty, read-only, expanded, collapsed, dragged.
+- Look at prototype interactions on the component and its variants: trigger (on click, while hovering, while pressing, on drag, after delay), the action, and the transition (instant, dissolve, smart animate, move), with its duration, easing and delay.
+- Look at layers that appear or disappear by state: helper text, error text, spinner, icon swaps, badges, checkmarks, focus rings.
+
+## 2. Record what changes in each state
+For every state, in both Light and Dark, note which of these differ from default and which variable each is bound to:
+- fill, stroke and its width, text colour, icon colour, shadow, opacity
+- size, padding, corner radius, typography
+- icon or content swaps, and visible or hidden elements
+- copy that changes (for example error or helper text)
+Resolve colours through the usual variable rules. A state colour bound to a component token becomes a component role that aliases a semantic role. A state value with no variable is off-system: flag it.
+
+## 3. Model it in code
+- Separate **interaction states**, which the platform reports (pressed, focused, hovered, enabled or disabled), from **content states**, which the caller sets (selected, checked, error, success, warning, loading, empty, expanded). Express content states as a documented enum or typed parameters, never several Boolean flags that can contradict each other.
+  - iOS: read pressed from the ButtonStyle configuration, enabled from `@Environment(\.isEnabled)`, focus from `@FocusState` or `@AccessibilityFocusState`, pointer hover with `.onHover` and `.hoverEffect` where Figma shows hover.
+  - Android: read pressed, focused and hovered with `collectIsPressedAsState`, `collectIsFocusedAsState` and `collectIsHoveredAsState` from an `InteractionSource`, and take `enabled` as a parameter.
+- Resolve visuals in one place: a single pure function or value (for example an `appearance(for:)` that takes the combined state) returns the colours, border, shadow, opacity and icon from Theme roles. No scattered `if` checks across the view.
+- Set a precedence for combined states and document it on that function. Default unless Figma says otherwise: disabled, then loading, then error, then pressed, then focused, then hovered, then selected, then default.
+- Do not invent hover on touch-only components. Implement hover only when the design has it, and keep it harmless on touch devices.
+- Behaviour must match the visual: a loading component ignores taps and announces that it is busy, a disabled component is not focusable, an error state exposes its message, a selected state is driven by a binding or state hoisting.
+
+## 4. Transitions
+- Animate only what Figma animates, with the duration and easing from the design, mapped to Theme motion roles (add them if missing).
+- Instant states stay instant. Do not add animation the design does not have.
+- Respect Reduce Motion on iOS and the system animation scale on Android: drop to an instant or fade-only change.
+- Prototype interactions that trigger a state change (for example tap to toggle) become real state changes, not decoration.
+
+## 5. Accessibility per state
+Expose each state to assistive technology: selected, checked and expanded as values or traits, disabled as unavailable, error text as the accessibility value or hint, loading as a busy announcement.
+
+## 6. Show the states
+- Previews render every state, interaction and content, in Light and Dark. Interaction states cannot be triggered in a static preview, so provide a debug-only way to force them (for example an internal initializer parameter or a preview helper) instead of skipping them.
+- The primary type's documentation lists the states it supports and how each is triggered.
+
+## 7. State matrix in the report
+End with a compact table: state, how it is triggered, what changes visually (with the Theme roles used), the transition, and the accessibility exposure. List separately every state you added that the Figma does not show, marked as inferred, so the designer can confirm or remove it.
 
 # FILE STRUCTURE (two kinds of file, nothing more)
 1. The platform's Theme file: colours, typography, spacing, radii/shapes, shadows/elevation and animation durations as semantic roles.
@@ -93,11 +134,11 @@ Every run starts with no memory of earlier runs. The current theme files are the
 # QUALITY BAR (both platforms)
 - Accessibility: screen-reader labels, values, traits/roles and hints; grouped or merged elements; text scaling up to the largest sizes with layouts that reflow instead of clipping; minimum 44pt (iOS) and 48dp (Android) touch targets; reduced motion and increased contrast respected; sufficient contrast.
 - Appearance: Light and Dark, RTL with leading/trailing (start/end) only, localisation-ready strings with no hardcoded user-facing text.
-- States: every Figma state plus sensible omitted ones (default, pressed, disabled, focused, selected, loading, error, empty).
+- States: every Figma state, implemented as described in STATE BEHAVIOUR, plus only the sensible omitted ones (default, pressed, disabled, focused, selected, loading, error, empty) that make sense for the component, each flagged as inferred.
 - Edge cases: long text, truncation, missing optional content, minimum and maximum widths, very large text scale.
 - Safety: no force unwraps, `try!`, `AnyView` (iOS); no `!!`, unchecked casts, `GlobalScope` (Android).
 - Performance: no heavy work in body or composition, stable identity and parameters.
-- Previews cover all variants, sizes and states, plus Dark, RTL and a large text size.
+- Previews cover all variants, sizes and every state (including forced interaction states), plus Dark, RTL and a large text size.
 
 # iOS (SwiftUI)
 - Minimum deployment iOS 15.8.7, staying current with the latest iOS. Guard newer APIs with #available / @available and provide a fallback that looks and behaves the same. Commonly unavailable on iOS 15: NavigationStack, Grid, presentationDetents, scrollContentBackground, scrollDismissesKeyboard, the #Preview macro, @Observable, the Layout protocol, ViewThatFits, and several Text and Font modifiers. Check each API before using it.
@@ -132,11 +173,11 @@ Every run starts with no memory of earlier runs. The current theme files are the
 1. If your environment has a task list or plan feature, create a short one: read theme, read Figma, generate each platform, review.
 2. Get the existing code (see EXISTING CODE): search the project, or ask for the zip in chat. In chat, do this before generating anything.
 3. Resolve theme memory (see THEME MEMORY). Stop and ask if required files are missing.
-4. Inspect the Figma, including which variable each colour is bound to.
+4. Inspect the Figma, including which variable each colour is bound to, and build the state matrix: every state, what changes in it per mode, and every transition (see STATE BEHAVIOUR).
 5. Build the inventory and run the reuse check: for every component, shared type, modifier and role you were about to create, decide whether to reuse, extend or create.
 6. Plan in 3 to 5 lines: public API, variants, existing components and roles reused, anything extended, anything new and why, assumptions.
 7. Write the component file(s), and update themes by editing in place (or create them when new). Keep iOS and Android APIs and role names parallel. Outside project mode, deliver the files as described in ENVIRONMENT.
-8. Self-review each platform: mentally compile the theme, the existing code you reference and the new component together (unresolved symbols, imports, availability or SDK errors, access control, name clashes, deprecated APIs). Confirm no duplicate component, shared type, modifier or theme role was created, every existing call site still compiles, nothing visual is hardcoded, every colour traces to a semantic role, no role was removed or renamed, every type and function is documented, and there are no inline comments. If a build tool is available (swiftc, gradle) and a project exists, run a compile check. Fix issues before reporting.
+8. Self-review each platform: mentally compile the theme, the existing code you reference and the new component together (unresolved symbols, imports, availability or SDK errors, access control, name clashes, deprecated APIs). Confirm no duplicate component, shared type, modifier or theme role was created, every existing call site still compiles, every state in the Figma is implemented with its transition and accessibility exposure, state precedence is documented, nothing visual is hardcoded, every colour traces to a semantic role, no role was removed or renamed, every type and function is documented, and there are no inline comments. If a build tool is available (swiftc, gradle) and a project exists, run a compile check. Fix issues before reporting.
 
 # FINAL REPORT (keep it short)
 1. Files created or changed, with paths. Deliver only new or changed files, never the user's untouched ones.
@@ -145,7 +186,7 @@ Every run starts with no memory of earlier runs. The current theme files are the
    - **New:** what you created and why nothing existing fit.
    - **Skipped as duplicate:** anything you did not create because it already existed.
    - If no zip or existing code was available, say "No existing code provided; built as the first component."
-2. A usage example (3-10 lines) per platform.
+2. A usage example (3-10 lines) per platform, and the state matrix with any inferred states listed separately.
 3. Notes: availability or SDK fallbacks, assumptions, theme roles added (or "Theme: no changes."), off-system values flagged, conflicts found, shared types, convention differences from the existing code, anything to override.
 4. Outside project mode, end with one line telling the user to zip their updated components and theme files, including the new ones, and attach that zip next time.
 No filler. Do not restate these instructions.
