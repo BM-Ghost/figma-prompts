@@ -25,6 +25,8 @@ If you cannot read Figma links, ask me for screenshots or specs instead of guess
 
 HEADER
   awk 'BEGIN{fm=0} /^---$/ && fm<2 {fm++; next} fm>=2 {print}' "$SKILL_DIR/SKILL.md"
+  printf '\n----- DESIGN SYSTEM SOURCES (design-system-sources.md) -----\n\n'
+  cat "$SKILL_DIR/design-system-sources.md"
   printf '\nReply "Ready" and wait for the first Figma link.\n'
 } > "$PROMPT"
 

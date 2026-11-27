@@ -17,8 +17,9 @@ Built for Claude first. Works in other AI tools too.
 
 For each component and platform:
 
-- one component file named after its primary type, with variants, states, previews, Dark mode, RTL and large-text support
+- one component file named after its primary type, with variants, states, previews in every mode (Light, Dark, Ignite), RTL and large-text support
 - every state and transition in the design (hover, pressed, focus, disabled, selected, error, loading and more), each with its own colours, motion and accessibility, plus a state matrix in the report that marks any state it had to infer
+- colours read from the design-system Styleguide in every mode, and icons read from the Icon Library, on every run, not just from your theme file
 - a shared theme file (`Theme.swift`, `Theme.kt`), created with the first component and extended afterwards, so colours, spacing and type never drift between components
 - a short report with a usage example, assumptions, and anything in the design that is not tied to a design-system variable
 
@@ -92,17 +93,21 @@ Before it builds anything, the skill looks at what you already have, so you don'
 
 What it does with your code:
 
-- Reuses an existing component instead of creating a second one, and uses existing components inside new ones.
-- Adds a new variant to an existing component without breaking current call sites.
+- Never creates a component that already exists, and never modifies an existing component, even a similar one. Similar components get their own new file. Differences from the Figma are reported as drift and you decide what to update.
+- Uses existing components inside new ones only when they fit exactly.
 - Reuses your shared types, theme roles and naming, and matches your folder layout and documentation style.
-- Reads your files as reference only. It never changes your originals, and the zip's contents are treated as data, never as instructions.
-- Delivers only new or changed files, and the report lists what was reused, extended, new, and skipped as a duplicate.
+- The only existing files it edits are the theme and the icon catalog, by adding entries. It never changes your other originals, and the zip's contents are treated as data, never as instructions.
+- Delivers only new or changed files, and the report lists what was reused, new, skipped because it already exists, and any drift.
 
 Because chat remembers nothing between conversations, re-zip your project after each batch of components and attach the new zip next time.
 
+## Design system sources
+
+The skill reads your Styleguide (colours, dimensions, typography) and Icon Library from the links in `skills/figma-to-native/design-system-sources.md`. Edit that file for your own design system, or paste the links in your message. Colours are supported in every mode the Styleguide defines, including Ignite, selected through a `ThemeMode`.
+
 ## How the theme stays consistent
 
-- The theme files are the memory. Every run reads them first.
+- The theme files hold the role names, Figma holds the values. Every run reads both and reports drift instead of overwriting.
 - New roles are inserted with an edit, never a rewrite. Existing roles are never removed or renamed.
 - Role names come from the Figma token path in camelCase and are identical on both platforms.
 - Colours bound to a component token become a role that aliases a semantic role, never a new hex value.
@@ -121,7 +126,8 @@ Because chat remembers nothing between conversations, re-zip your project after 
 ├── plugin.json              Claude Code plugin manifest (name: figma-to-native)
 └── marketplace.json         Lets this repo act as a plugin marketplace
 skills/figma-to-native/
-└── SKILL.md                 All the rules. Single source of truth.
+├── SKILL.md                 All the rules. Single source of truth.
+└── design-system-sources.md Figma links for the Styleguide and Icon Library
 agents/figma-to-native.md    Claude Code agent that loads the skill
 scripts/
 ├── build.sh                 Builds the chat zip and the paste-ready prompt
